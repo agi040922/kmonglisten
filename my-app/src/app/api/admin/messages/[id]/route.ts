@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { moderateContent } from '@/lib/gcp';
 
 // 특정 메시지 조회
 export async function GET(

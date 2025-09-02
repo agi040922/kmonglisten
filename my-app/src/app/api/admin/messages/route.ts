@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         FROM voice_messages
       `;
       let countQuery = 'SELECT COUNT(*) FROM voice_messages';
-      const params: any[] = [];
+      const params: (string | number)[] = [];
       
       if (status) {
         query += ' WHERE status = $1';

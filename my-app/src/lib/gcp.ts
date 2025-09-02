@@ -79,11 +79,11 @@ export const transcribeAudio = async (gcsUri: string): Promise<string> => {
     if (response.results && response.results.length > 0) {
       // 신뢰도 기반 필터링으로 품질 향상
       const transcription = response.results
-        .filter((result: any) => {
+        .filter((result) => {
           const confidence = result.alternatives?.[0]?.confidence || 0;
           return confidence > 0.5; // 50% 이상 신뢰도만 포함
         })
-        .map((result: any) => result.alternatives?.[0]?.transcript || '')
+        .map((result) => result.alternatives?.[0]?.transcript || '')
         .join(' ')
         .trim();
       
@@ -91,16 +91,11 @@ export const transcribeAudio = async (gcsUri: string): Promise<string> => {
     }
     
     return '';
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('음성 인식 오류:', error);
     
-    // 구체적인 에러 메시지 제공
-    if (error instanceof Error) {
-      if (error.message.includes('quota')) {
-        throw new Error('음성 인식 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.');
-      } else if (error.message.includes('permission')) {
-        throw new Error('음성 인식 권한이 없습니다. 서비스 계정 설정을 확인해주세요.');
-      }
+    if (error && typeof error === 'object' && 'code' in error && error.code === 5) {
+      throw new Error(`파일을 찾을 수 없습니다: ${gcsUri}`);
     }
     
     throw new Error('음성을 텍스트로 변환하는 중 오류가 발생했습니다.');

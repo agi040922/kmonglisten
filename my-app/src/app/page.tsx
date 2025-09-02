@@ -1,7 +1,7 @@
 'use client'
 
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from 'react';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);

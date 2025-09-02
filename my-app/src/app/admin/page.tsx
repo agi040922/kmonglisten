@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface VoiceMessage {
   id: number;
@@ -388,12 +389,12 @@ export default function AdminPage() {
 
         {/* 홈으로 돌아가기 */}
         <div className="mt-8 text-center">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
           >
             ← 메인 페이지로 돌아가기
-          </a>
+          </Link>
         </div>
       </div>
     </div>
