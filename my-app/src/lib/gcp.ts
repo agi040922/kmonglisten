@@ -4,7 +4,10 @@ import { SpeechClient } from '@google-cloud/speech';
 // Google Cloud Storage 설정
 const storage = new Storage({
   projectId: process.env.GCP_PROJECT_ID,
-  keyFilename: process.env.GCP_KEY_FILE, // 서비스 계정 키 파일 경로
+  credentials: process.env.GCP_SERVICE_ACCOUNT_KEY 
+    ? JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY)
+    : undefined,
+  keyFilename: process.env.GCP_KEY_FILE, // 로컬 개발용
 });
 
 const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || '');
@@ -12,7 +15,10 @@ const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || '');
 // Google Cloud Speech-to-Text 설정
 const speechClient = new SpeechClient({
   projectId: process.env.GCP_PROJECT_ID,
-  keyFilename: process.env.GCP_KEY_FILE,
+  credentials: process.env.GCP_SERVICE_ACCOUNT_KEY 
+    ? JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY)
+    : undefined,
+  keyFilename: process.env.GCP_KEY_FILE, // 로컬 개발용
 });
 
 // 파일을 GCS에 업로드
