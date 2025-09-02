@@ -1,103 +1,194 @@
+'use client'
+
 import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        setAudioBlob(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('녹음을 시작할 수 없습니다:', error);
+      alert('마이크 접근 권한이 필요합니다.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const uploadAudio = async () => {
+    if (!audioBlob) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const response = await fetch('/api/upload-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert('음성 메시지가 성공적으로 전송되었습니다!');
+        setAudioBlob(null);
+      } else {
+        throw new Error('업로드 실패');
+      }
+    } catch (error) {
+      console.error('업로드 오류:', error);
+      alert('업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* 배경 이미지 */}
+      <div className="absolute inset-0 z-0">
         <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
+          src="/이음캠페인.png"
+          alt="Be:liveU 이음 캠페인 배경"
+          fill
+          className="object-cover"
           priority
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+        {/* 오버레이 */}
+        <div className="absolute inset-0 bg-black/20"></div>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* 메인 컨텐츠 */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          {/* 제목 */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg">
+            마음의 전화
+          </h1>
+
+          {/* 론칭 안내 메시지 */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              론칭 안내
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              안녕하세요, 여러분의 마음을 들어주는 <strong>마음의전화</strong>입니다.
+              <br />
+              마음의전화는 <strong>00월 00일</strong>부터 진행될 예정이오니
+              <br />
+              당신의 마음을 들려주세요.
+              <br />
+              감사합니다.
+            </p>
+          </div>
+
+          {/* 버튼 영역 */}
+          <div className="space-y-6">
+            {/* 음성 메시지 녹음 버튼 */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-2xl">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                🎙️ 음성 메시지 녹음
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                수화기를 들고 녹음 버튼을 클릭하여 당신의 마음을 들려주세요
+              </p>
+              
+              <div className="space-y-4">
+                {!isRecording && !audioBlob && (
+                  <button
+                    onClick={startRecording}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    🔴 녹음 시작
+                  </button>
+                )}
+
+                {isRecording && (
+                  <button
+                    onClick={stopRecording}
+                    className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 animate-pulse shadow-lg"
+                  >
+                    ⏹️ 녹음 중... (클릭하여 정지)
+                  </button>
+                )}
+
+                {audioBlob && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-center space-x-4">
+                      <audio controls className="w-full max-w-md">
+                        <source src={URL.createObjectURL(audioBlob)} type="audio/wav" />
+                      </audio>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={uploadAudio}
+                        disabled={isUploading}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+                      >
+                        {isUploading ? '전송 중...' : '📤 전송하기'}
+                      </button>
+                      <button
+                        onClick={() => setAudioBlob(null)}
+                        className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+                      >
+                        🔄 다시 녹음
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 운영 방안 안내 */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                📋 운영 방안
+              </h3>
+              <div className="text-sm text-gray-700 space-y-2 text-left">
+                <p><strong>① 수화기를 들고 녹음버튼 클릭</strong> → 발신자 녹음</p>
+                <p><strong>② 녹음파일 확인 후 텍스트 추출</strong> (텍스트 추출시 내용 검열)</p>
+                <p><strong>③ 검열된 내용은 무대위 미디어월에 전송</strong>하여 화면 노출</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 관리자 링크 */}
+          <div className="pt-8">
+            <a
+              href="/admin"
+              className="inline-block bg-gray-800/80 hover:bg-gray-900/80 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 backdrop-blur-sm"
+            >
+              🔧 관리자 페이지
+            </a>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
