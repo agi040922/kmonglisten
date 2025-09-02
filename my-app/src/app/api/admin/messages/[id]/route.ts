@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const messageId = parseInt(params.id);
+    const resolvedParams = await params;
+    const messageId = parseInt(resolvedParams.id);
     
     if (isNaN(messageId)) {
       return NextResponse.json({ error: '잘못된 메시지 ID입니다.' }, { status: 400 });
