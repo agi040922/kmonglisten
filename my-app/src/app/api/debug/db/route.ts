@@ -57,7 +57,7 @@ export async function GET() {
     console.error('데이터베이스 오류:', error);
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       dbConfig: {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
